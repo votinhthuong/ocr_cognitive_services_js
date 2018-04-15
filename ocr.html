@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OCR</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<script type="text/javascript">
+    
+         function encodeImageFileAsURL() {
+         var filesSelected = document.getElementById("inputFileToLoad").files;
+         if (filesSelected.length > 0) {
+           var fileToLoad = filesSelected[0];
+
+           var fileReader = new FileReader();
+
+           fileReader.onload = function(fileLoadedEvent) {
+             var srcData = fileLoadedEvent.target.result; // <--- data: base64
+
+             var newImage = document.createElement('img');
+             newImage.src = srcData;
+             newImage.setAttribute('width','50%');
+             newImage.setAttribute('height','60%');
+             newImage.setAttribute('object-fit','contain');
+             //document.getElementById("textBase64").innerHTML = srcData;
+             document.getElementById("textBase64").innerHTML = srcData;
+             document.getElementById("imgThuong").innerHTML = newImage.outerHTML;            
+             document.getElementById("sourceImage").src = document.getElementById("imgThuong").innerHTML;             
+             
+             //alert("Converted Base64 version is " + document.getElementById("imgTest").innerHTML);
+             //console.log("Converted Base64 version is " + document.getElementById("imgTest").innerHTML);
+           }
+           fileReader.readAsDataURL(fileToLoad);
+
+         }  
+     }
+
+    function processImage() {
+        // **********************************************
+        // *** Update or verify the following values. ***
+        // **********************************************
+        var a = document.getElementById("textBase64").value;
+        makeblob = function (dataURL) {
+            var BASE64_MARKER = ';base64,';
+            if (dataURL.indexOf(BASE64_MARKER) == -1) {
+                var parts = dataURL.split(',');
+                var contentType = parts[0].split(':')[1];
+                var raw = decodeURIComponent(parts[1]);
+                return new Blob([raw], { type: contentType });
+            }
+            var parts = dataURL.split(BASE64_MARKER);
+            var contentType = parts[0].split(':')[1];
+            var raw = window.atob(parts[1]);
+            var rawLength = raw.length;
+
+            var uInt8Array = new Uint8Array(rawLength);
+
+            for (var i = 0; i < rawLength; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+
+            return new Blob([uInt8Array], { type: contentType });
+        }
+         
+        // Replace the subscriptionKey string value with your valid subscription key.
+        var subscriptionKey = "6ee3520895e84d29916db1bf8d24287e";
+
+        // Replace or verify the region.
+        //
+        // You must use the same region in your REST API call as you used to obtain your subscription keys.
+        // For example, if you obtained your subscription keys from the westus region, replace
+        // "westcentralus" in the URI below with "westus".
+        //
+        // NOTE: Free trial subscription keys are generated in the westcentralus region, so if you are using
+        // a free trial subscription key, you should not need to change this region.
+        var uriBase = "https://southeastasia.api.cognitive.microsoft.com/vision/v1.0/ocr";
+
+        // Request parameters.
+        var params = {
+            "language": "unk",
+            "detectOrientation ": "true",
+        };
+
+        // Display the image.
+        //var sourceImageUrl = document.getElementById("inputFileToLoad").value;
+        //document.querySelector("#sourceImage").src = sourceImageUrl;
+
+        // Perform the REST API call.
+        $.ajax({
+            url: uriBase + "?" + $.param(params),
+
+            // Request headers.
+            beforeSend: function(jqXHR){
+                jqXHR.setRequestHeader("Content-Type","application/octet-stream");
+                jqXHR.setRequestHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
+            },
+
+            type: "POST",
+            processData: false,            
+
+            // Request body.
+            data: makeblob(a),
+        })
+
+        .done(function(data) {
+
+            // Show formatted JSON on webpage.            
+            let textArray = [];
+            let str = '';
+            data.regions.map(region => region.lines.map(line => line.words.map(word => textArray.push(word.text))));
+            textArray.map(val =>{
+                str = str + val + ' ';
+            })
+            $("#responseTextArea").val(str);
+            //document.getElementById("responseTextArea").value=str;
+            //$("#responseTextArea").val(data.text);
+            //var x = data.text;
+            //$("#responseTextArea").val(JSON.stringify(data.regions.boundingBox, null, 2));
+            //document.getElementById("responseTextArea").value=x;
+        })
+
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            // Display error message.
+            var errorString = (errorThrown === "") ? "Error. " : errorThrown + " (" + jqXHR.status + "): ";
+            errorString += (jqXHR.responseText === "") ? "" : (jQuery.parseJSON(jqXHR.responseText).message) ? 
+                jQuery.parseJSON(jqXHR.responseText).message : jQuery.parseJSON(jqXHR.responseText).error.message;
+            alert(errorString);
+        });
+    };
+
+    function processImage1() {
+        // **********************************************
+        // *** Update or verify the following values. ***
+        // **********************************************
+
+        // Replace the subscriptionKey string value with your valid subscription key.
+        var subscriptionKey = "6ee3520895e84d29916db1bf8d24287e";
+
+        // Replace or verify the region.
+        //
+        // You must use the same region in your REST API call as you used to obtain your subscription keys.
+        // For example, if you obtained your subscription keys from the westus region, replace
+        // "westcentralus" in the URI below with "westus".
+        //
+        // NOTE: Free trial subscription keys are generated in the westcentralus region, so if you are using
+        // a free trial subscription key, you should not need to change this region.
+        var uriBase = "https://southeastasia.api.cognitive.microsoft.com/vision/v1.0/ocr";
+
+        // Request parameters.
+        var params = {
+            "language": "unk",
+            "detectOrientation ": "true",
+        };
+
+        // Display the image.
+        var sourceImageUrl = document.getElementById("inputImage").value;
+        document.querySelector("#sourceImage").src = sourceImageUrl;
+
+        // Perform the REST API call.
+        $.ajax({
+            url: uriBase + "?" + $.param(params),
+
+            // Request headers.
+            beforeSend: function(jqXHR){
+                jqXHR.setRequestHeader("Content-Type","application/json");
+                jqXHR.setRequestHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
+            },
+
+            type: "POST",
+
+            // Request body.
+            data: '{"url": ' + '"' + sourceImageUrl + '"}',
+        })
+
+        .done(function(data) {
+            // Show formatted JSON on webpage.
+            let textArray = [];
+            let str = '';
+
+            data.regions.map(region => region.lines.map(line => line.words.map(word => textArray.push(word.text))));
+
+            textArray.map(val =>{
+                str = str + val + ' ';
+            })
+            $("#responseTextArea").val(str);
+        })
+
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            // Display error message.
+            var errorString = (errorThrown === "") ? "Error. " : errorThrown + " (" + jqXHR.status + "): ";
+            errorString += (jqXHR.responseText === "") ? "" : (jQuery.parseJSON(jqXHR.responseText).message) ? 
+                jQuery.parseJSON(jqXHR.responseText).message : jQuery.parseJSON(jqXHR.responseText).error.message;
+            alert(errorString);
+        });
+    };
+</script>
+
+<div class="page">
+    <div class="title"><h2>Optical Character Recognition (OCR)</h2></div>
+    <div class="container">
+        
+        <div class="userInterface">            
+            Image to read: <input type="text" name="inputImage" id="inputImage" value="Enter image URL here." />
+            <button onclick="processImage1()">Read Image</button>
+            <br><br>
+            <input id="inputFileToLoad" type="file" onchange="encodeImageFileAsURL();" /> 
+            <button onclick="processImage()">GET TEXT</button>
+            <textarea style="display:none;" rows="10" cols="60" id="textBase64"></textarea>           
+            <br><br>
+            <div class="wrapper">
+                <div class="jsonOutput">
+                    Response:
+                    <br><br>
+                    <textarea id="responseTextArea" class="UIInput"></textarea>
+                </div>
+                <div class="pad"></div>
+                <div class="imageDiv">
+                    Source image:<br>
+                    <img id="sourceImage" >
+                    <div id="imgThuong" style=" width: 100%; height: 100%;"></div> 
+                </div>
+            </div>
+            <div class="subKeyDiv">
+                <p align="center">Vo Tinh Thuong - https://minhthuongeh.wordpress.com</p>               
+            </div>
+        </div>
+    </div>
+</div>
+</body>
